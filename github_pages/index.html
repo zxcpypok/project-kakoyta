@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IT Study Planner AI</title>
+  <style>
+    /* --- CSS Стили --- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg-desktop: #0f111a;
+      --bg-window: #1a1b26;
+      --bg-bar: #16161e;
+      --border-inactive: #292e42;
+      --border-active: #7aa2f7;
+      --text-main: #c0caf5;
+      --text-muted: #565f89;
+      --accent-blue: #7aa2f7;
+      --accent-green: #9ece6a;
+      --accent-purple: #bb9af7;
+      --accent-red: #f7768e;
+      --accent-yellow: #e0af68;
+      --arch-cyan: #00f8ff;
+    }
+
+    body {
+      background-color: var(--bg-desktop);
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.4;
+      min-height: 100vh;
+      padding: 12px;
+    }
+
+    .desktop {
+      max-width: 1120px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-bar);
+      border: 2px solid var(--border-inactive);
+      padding: 6px 14px;
+    }
+
+    .workspaces {
+      display: flex;
+      gap: 12px;
+    }
+
+    .ws {
+      color: var(--text-muted);
+    }
+
+    .ws.active {
+      color: var(--accent-blue);
+      font-weight: bold;
+    }
+
+    .sys-info {
+      display: flex;
+      gap: 10px;
+      color: var(--accent-green);
+    }
+
+    .tiling-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .window {
+      aspect-ratio: 1 / 1;
+      background: var(--bg-window);
+      border: 2px solid var(--border-inactive);
+      border-radius: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+
+    .window:hover {
+      border-color: var(--border-active);
+    }
+
+    .win-bar {
+      background: var(--bg-bar);
+      border-bottom: 1px solid var(--border-inactive);
+      padding: 5px 10px;
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-muted);
+      user-select: none;
+    }
+
+    .window:hover .win-bar {
+      background: #1f2335;
+      color: var(--accent-blue);
+    }
+
+    .win-content {
+      flex: 1;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .space-between {
+      justify-content: space-between;
+    }
+
+    h2 {
+      font-size: 15px;
+      color: var(--accent-purple);
+      border-bottom: 1px dashed var(--border-inactive);
+      padding-bottom: 5px;
+      margin-bottom: 4px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .half {
+      flex: 1;
+    }
+
+    label {
+      color: var(--accent-green);
+      font-size: 11px;
+    }
+
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 7px 10px;
+      background: var(--bg-desktop);
+      border: 1px solid var(--border-inactive);
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 12px;
+      border-radius: 0;
+    }
+
+    input[type="text"]:focus,
+    select:focus {
+      border-color: var(--accent-blue);
+      outline: none;
+    }
+
+    button {
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 0;
+      transition: 0.2s;
+    }
+
+    .btn-primary {
+      margin-top: auto;
+      background: var(--bg-bar);
+      border: 1px solid var(--accent-blue);
+      color: var(--accent-blue);
+      font-weight: bold;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-blue);
+      color: var(--bg-desktop);
+    }
+
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .filter-btn {
+      background: var(--bg-desktop);
+      border: 1px solid var(--border-inactive);
+      color: var(--text-main);
+      text-align: left;
+      padding: 6px 10px;
+    }
+
+    .filter-btn:hover,
+    .filter-btn.active {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+      background: rgba(158, 206, 106, 0.08);
+    }
+
+    .btn-danger {
+      width: 100%;
+      background: var(--bg-bar);
+      border: 1px solid var(--accent-red);
+      color: var(--accent-red);
+    }
+
+    .btn-danger:hover {
+      background: var(--accent-red);
+      color: var(--bg-desktop);
+      font-weight: bold;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px dotted var(--border-inactive);
+    }
+
+    .stat-val {
+      font-weight: bold;
+    }
+
+    .stat-val.accent {
+      color: var(--accent-green);
+    }
+
+    .progress-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 12px;
+      background: var(--bg-desktop);
+      border: 1px solid var(--border-inactive);
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent-green);
+      transition: width 0.3s ease;
+    }
+
+    .formula-hint {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    #taskList {
+      list-style: none;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-right: 4px;
+    }
+
+    #taskList li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      background: var(--bg-desktop);
+      border: 1px solid var(--border-inactive);
+    }
+
+    .task-info {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex: 1;
+      min-width: 0;
+      cursor: pointer;
+    }
+
+    .cat-badge {
+      font-size: 9px;
+      padding: 1px 4px;
+      border: 1px solid var(--accent-yellow);
+      color: var(--accent-yellow);
+      flex-shrink: 0;
+    }
+
+    .priority-badge {
+      font-size: 9px;
+      padding: 1px 4px;
+      flex-shrink: 0;
+    }
+
+    .p-high {
+      border: 1px solid var(--accent-red);
+      color: var(--accent-red);
+    }
+
+    .p-med {
+      border: 1px solid var(--accent-yellow);
+      color: var(--accent-yellow);
+    }
+
+    .p-low {
+      border: 1px solid var(--accent-blue);
+      color: var(--accent-blue);
+    }
+
+    .task-text {
+      overflow-wrap: anywhere;
+      font-size: 12px;
+    }
+
+    .done {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .delete-button {
+      background: transparent;
+      border: 1px solid var(--accent-red);
+      color: var(--accent-red);
+      padding: 2px 6px;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .delete-button:hover {
+      background: var(--accent-red);
+      color: var(--bg-desktop);
+    }
+
+    #emptyMessage {
+      text-align: center;
+      color: var(--text-muted);
+      margin: auto 0;
+      font-size: 12px;
+    }
+
+    .deploy-info {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .deploy-info span {
+      color: var(--accent-green);
+    }
+
+    .term-btn {
+      display: block;
+      margin-top: auto;
+      padding: 8px;
+      background: var(--bg-bar);
+      border: 1px solid var(--accent-green);
+      color: var(--accent-green);
+      text-decoration: none;
+      text-align: center;
+      font-size: 12px;
+      transition: 0.2s;
+    }
+
+    .term-btn:hover {
+      background: var(--accent-green);
+      color: var(--bg-desktop);
+      font-weight: bold;
+    }
+
+    .fastfetch-content {
+      justify-content: space-between;
+    }
+
+    .ff-container {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      margin: auto 0;
+    }
+
+    .ff-logo {
+      color: var(--arch-cyan);
+      font-size: 11px;
+      line-height: 1.1;
+      font-weight: bold;
+    }
+
+    .ff-info {
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .ff-user {
+      color: var(--accent-blue);
+      font-weight: bold;
+    }
+
+    .ff-host {
+      color: var(--accent-purple);
+      font-weight: bold;
+    }
+
+    .ff-sep {
+      color: var(--text-muted);
+    }
+
+    .ff-info span {
+      color: var(--accent-green);
+    }
+
+    .ff-success {
+      color: var(--accent-green);
+      font-weight: bold;
+    }
+
+    .copyright {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .tiling-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .tiling-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .status-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="desktop">
+    <!-- Верхняя панель статуса -->
+    <div class="status-bar">
+      <div class="workspaces">
+        <span class="ws">[1: ai_planner]</span>
+        <span class="ws active">[2: github_pages]</span>
+        <span class="ws">[3: deploy]</span>
+      </div>
+      <div class="sys-info">
+        <span>PRAC: #3 (Cloud & AI)</span>
+        <span>|</span>
+        <span>alex@arch</span>
+      </div>
+    </div>
+
+    <!-- Тайлинговая сетка из 6 квадратных окон -->
+    <main class="tiling-grid">
+
+      <!-- Окно 1: Панель добавления задач -->
+      <section class="window">
+        <div class="win-bar">
+          <span class="win-title">~/ai_generator.sh</span>
+          <span class="win-controls">[ - □ × ]</span>
+        </div>
+        <div class="win-content">
+          <h2>// Новая задача (AI)</h2>
+          <div class="form-group">
+            <input type="text" id="taskInput" placeholder="Введите учебную задачу...">
+          </div>
+          <div class="form-row">
+            <div class="form-group half">
+              <label for="categorySelect">Категория:</label>
+              <select id="categorySelect">
+                <option value="HTML">HTML</option>
+                <option value="CSS">CSS</option>
+                <option value="JavaScript">JavaScript</option>
+                <option value="Другое">Другое</option>
+              </select>
+            </div>
+            <div class="form-group half">
+              <label for="prioritySelect">Приоритет:</label>
+              <select id="prioritySelect">
+                <option value="Высокий">Высокий</option>
+                <option value="Средний" selected>Средний</option>
+                <option value="Низкий">Низкий</option>
+              </select>
+            </div>
+          </div>
+          <button id="addButton" class="btn-primary">[ + Добавить с ИИ ]</button>
+        </div>
+      </section>
+
+      <!-- Окно 2: Управление и фильтры -->
+      <section class="window">
+        <div class="win-bar">
+          <span class="win-title">~/filters.sh</span>
+          <span class="win-controls">[ - □ × ]</span>
+        </div>
+        <div class="win-content space-between">
+          <div>
+            <h2>// Фильтрация</h2>
+            <div class="filter-group">
+              <button class="filter-btn active" data-filter="all">[Все]</button>
+              <button class="filter-btn" data-filter="active">[Активные]</button>
+              <button class="filter-btn" data-filter="completed">[Выполненные]</button>
+            </div>
+          </div>
+          <div class="danger-zone">
+            <button id="clearButton" class="btn-danger">[ Очистить всё ]</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Окно 3: Статистика и прогресс -->
+      <section class="window">
+        <div class="win-bar">
+          <span class="win-title">~/analytics.sh</span>
+          <span class="win-controls">[ - □ × ]</span>
+        </div>
+        <div class="win-content space-between">
+          <div>
+            <h2>// Метрики</h2>
+            <div class="stat-row">
+              <span>Всего:</span>
+              <span id="total" class="stat-val">0</span>
+            </div>
+            <div class="stat-row">
+              <span>Выполнено:</span>
+              <span id="completed" class="stat-val">0</span>
+            </div>
+            <div class="stat-row">
+              <span>Прогресс:</span>
+              <span id="progressPercent" class="stat-val accent">0%</span>
+            </div>
+          </div>
+          <div class="progress-wrapper">
+            <div class="progress-bar-bg">
+              <div id="progressFill" class="progress-bar-fill"></div>
+            </div>
+            <p class="formula-hint">Status: Synced with localStorage</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Окно 4: Список задач -->
+      <section class="window">
+        <div class="win-bar">
+          <span class="win-title">~/tasks_feed.md</span>
+          <span class="win-controls">[ - □ × ]</span>
+        </div>
+        <div class="win-content">
+          <h2>// Активные задачи</h2>
+          <ul id="taskList"></ul>
+          <p id="emptyMessage">Пока задач нет. Создайте первую!</p>
+        </div>
+      </section>
+
+      <!-- Окно 5: Статус публикации GitHub Pages -->
+      <section class="window">
+        <div class="win-bar">
+          <span class="win-title">~/git_status.sh</span>
+          <span class="win-controls">[ - □ × ]</span>
+        </div>
+        <div class="win-content">
+          <h2>// Деплой (GitHub Pages)</h2>
+          <div class="deploy-info">
+            <p><span>Branch:</span> main</p>
+            <p><span>Folder:</span> /root (/docs)</p>
+            <p><span>Status:</span> <span class="ff-success">Ready to Deploy</span></p>
+          </div>
+          <a class="term-btn" href="https://pages.github.com/" target="_blank">Инструкция GitHub Pages</a>
+        </div>
+      </section>
+
+      <!-- Окно 6: Футер Fastfetch Arch Linux -->
+      <footer class="window">
+        <div class="win-bar">
+          <span class="win-title">fastfetch</span>
+          <span class="win-controls">[ - □ × ]</span>
+        </div>
+        <div class="win-content fastfetch-content">
+          <div class="ff-container">
+            <pre class="ff-logo">
+      /\
+     /  \
+    / /\ \
+   / ____ \
+  /_/    \_\
+            </pre>
+            <div class="ff-info">
+              <p><span class="ff-user">alex</span>@<span class="ff-host">archlinux</span></p>
+              <p class="ff-sep">------------------</p>
+              <p><span>App:</span> IT Study Planner AI</p>
+              <p><span>Review:</span> Verified by AI</p>
+            </div>
+          </div>
+          <p class="copyright">© 2026 Практическая работа №3</p>
+        </div>
+      </footer>
+
+    </main>
+  </div>
+
+  <script>
+    /* --- JavaScript Логика --- */
+    const taskInput = document.querySelector("#taskInput");
+    const categorySelect = document.querySelector("#categorySelect");
+    const prioritySelect = document.querySelector("#prioritySelect");
+    const addButton = document.querySelector("#addButton");
+    const clearButton = document.querySelector("#clearButton");
+    const filterButtons = document.querySelectorAll(".filter-btn");
+    const taskList = document.querySelector("#taskList");
+    const emptyMessage = document.querySelector("#emptyMessage");
+    const totalElement = document.querySelector("#total");
+    const completedElement = document.querySelector("#completed");
+    const progressPercent = document.querySelector("#progressPercent");
+    const progressFill = document.querySelector("#progressFill");
+    let tasks = JSON.parse(localStorage.getItem("tasks_ai") || "[]");
+    let currentFilter = "all";
+
+    function saveTasks() {
+      localStorage.setItem("tasks_ai", JSON.stringify(tasks));
+    }
+
+    function updateStatistics() {
+      const total = tasks.length;
+      const completed = tasks.filter(task => task.completed).length;
+      totalElement.textContent = total;
+      completedElement.textContent = completed;
+      const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+      progressPercent.textContent = `${percent}%`;
+      progressFill.style.width = `${percent}%`;
+    }
+
+    function renderTasks() {
+      taskList.innerHTML = "";
+      const filteredTasks = tasks.filter(task => {
+        if (currentFilter === "active") return !task.completed;
+        if (currentFilter === "completed") return task.completed;
+        return true;
+      });
+      if (filteredTasks.length === 0) {
+        emptyMessage.style.display = "block";
+        emptyMessage.textContent = tasks.length === 0 ?
+          "Пока задач нет. Создайте первую!" :
+          "В выбранном фильтре задач нет.";
+      } else {
+        emptyMessage.style.display = "none";
+      }
+      filteredTasks.forEach(task => {
+        const li = document.createElement("li");
+        const infoDiv = document.createElement("div");
+        infoDiv.className = "task-info";
+        const catBadge = document.createElement("span");
+        catBadge.className = "cat-badge";
+        catBadge.textContent = task.category;
+        const prioBadge = document.createElement("span");
+        prioBadge.className = "priority-badge";
+        if (task.priority === "Высокий") prioBadge.classList.add("p-high");
+        else if (task.priority === "Средний") prioBadge.classList.add("p-med");
+        else prioBadge.classList.add("p-low");
+        prioBadge.textContent = task.priority;
+        const span = document.createElement("span");
+        span.className = "task-text";
+        span.textContent = task.text;
+        if (task.completed) {
+          span.classList.add("done");
+        }
+        infoDiv.addEventListener("click", () => {
+          task.completed = !task.completed;
+          saveTasks();
+          renderTasks();
+        });
+        infoDiv.append(catBadge, prioBadge, span);
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "×";
+        deleteButton.className = "delete-button";
+        deleteButton.addEventListener("click", () => {
+          tasks = tasks.filter(item => item.id !== task.id);
+          saveTasks();
+          renderTasks();
+        });
+        li.append(infoDiv, deleteButton);
+        taskList.append(li);
+      });
+      updateStatistics();
+    }
+
+    function addTask() {
+      const text = taskInput.value.trim();
+      const category = categorySelect.value;
+      const priority = prioritySelect.value;
+      if (text === "") {
+        alert("Пожалуйста, введите название задачи!");
+        return;
+      }
+      const newTask = {
+        id: Date.now(),
+        text: text,
+        category: category,
+        priority: priority,
+        completed: false
+      };
+      tasks.push(newTask);
+      saveTasks();
+      renderTasks();
+      taskInput.value = "";
+      taskInput.focus();
+    }
+    addButton.addEventListener("click", addTask);
+    taskInput.addEventListener("keydown", event => {
+      if (event.key === "Enter") addTask();
+    });
+    filterButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        filterButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentFilter = btn.dataset.filter;
+        renderTasks();
+      });
+    });
+    clearButton.addEventListener("click", () => {
+      if (tasks.length === 0) return;
+      if (confirm("Вы уверены, что хотите удалить все задачи?")) {
+        tasks = [];
+        saveTasks();
+        renderTasks();
+      }
+    });
+    renderTasks();
+  </script>
+</body>
+
+</html>
